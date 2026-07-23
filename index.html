@@ -299,7 +299,7 @@
   .stagger:nth-child(6){transition-delay:.52s;}
   .stagger:nth-child(7){transition-delay:.62s;}
 
-  /* ========== ABOUT + POLAROID ========== */
+   /* ========== ABOUT + POLAROID ========== */
   .about-grid{display:grid; grid-template-columns:0.95fr 1.05fr; gap:60px; align-items:center; position:relative; z-index:2;}
   .about-grid .head-center{text-align:left; margin:0; max-width:none;}
   .polaroid{
@@ -318,6 +318,12 @@
   .polaroid-photo img{
     width:100%; height:100%; object-fit:cover; display:block; position:relative; z-index:1;
   }
+  /* About photo slideshow (crossfade) */
+  .polaroid-photo .about-slide{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    opacity:0; transition:opacity 1s ease; z-index:1;
+  }
+  .polaroid-photo .about-slide.is-active{opacity:1; z-index:2;}
   .polaroid-empty-hint{
     display:none; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; gap:6px;
     font-family:'Space Mono',monospace; color:var(--blue-dark); text-align:center; font-size:11px; padding:20px;
@@ -445,6 +451,21 @@
   /* Gallery inner media */
   .g-inner img, .g-inner video{
     width:100%; height:100%; object-fit:cover; display:block; border-radius:inherit;
+  }
+
+  /* Video poster styling */
+  .g-inner video{
+    background: linear-gradient(135deg, #f0f2f8, #e5e8f2);
+  }
+
+  /* Ensure overlay transitions smoothly */
+  .video-overlay{
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
+  .video-overlay.hidden{
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   /* Video play overlay */
@@ -612,6 +633,15 @@
     .g-item{transform:none !important;}
     .g-item:hover{transform:translateY(-4px) !important;}
 
+    /* Portfolio still: show full frame at its own aspect ratio instead of cropping */
+    .g-item-portfolio{grid-row:span 1; height:auto; padding:10px 10px 30px;}
+    .g-item-portfolio .g-inner{
+      position:static; inset:auto; aspect-ratio:4/5; background:#0e0c10;
+    }
+    .g-item-portfolio .g-inner img{
+      object-fit:contain; width:100%; height:100%;
+    }
+
     /* Services mobile */
     .services{grid-template-columns:1fr;}
 
@@ -644,6 +674,7 @@
     html{scroll-behavior:auto;}
   }
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -830,10 +861,10 @@
       <div class="polaroid reveal-pop" style="--tilt:-3deg;">
         <div class="corner tl"></div><div class="corner tr"></div>
         <div class="polaroid-photo" id="aboutPhotoWrap">
-          <img src="./img/DSC01961.jpg" alt="Gautam behind the camera" id="aboutPhoto"
-               onerror="this.style.display='none'; document.getElementById('aboutPhotoWrap').classList.add('empty');">
-               <img src="./img/DSC01972.jpg" alt="Gautam behind the camera" id="aboutPhoto"
-               onerror="this.style.display='none'; document.getElementById('aboutPhotoWrap').classList.add('empty');">
+          <img src="./img/DSC01961.jpg" alt="Gautam behind the camera" class="about-slide is-active"
+               onerror="this.remove(); if(!document.querySelector('#aboutPhotoWrap .about-slide')) document.getElementById('aboutPhotoWrap').classList.add('empty');">
+          <img src="./img/with harish.jpg" alt="Gautam behind the camera" class="about-slide"
+               onerror="this.remove();">
           <div class="polaroid-empty-hint">
             <span class="plus">＋</span>
             Add a photo<br><span>save as about-photo.jpg</span>
@@ -953,11 +984,11 @@
     <div class="head-center reveal">
       <span class="eyebrow">GALLERY</span>
       <h2 class="h2">Photos &amp; <span class="accent">Video Work</span></h2>
-      <p>A placeholder gallery, styled like a contact sheet — swap these tiles for your own reels, behind-the-scenes stills, and client edits.</p>
+      <p>Here are a few highlights from my recent photo and video projects. Every frame is crafted with creativity and attention to detail.</p>
     </div>
     <div class="gallery-grid">
 
-      <div class="g-item tall reveal-pop stagger" style="--tilt:-2.5deg;">
+      <div class="g-item tall reveal-pop stagger g-item-portfolio" style="--tilt:-2.5deg;">
         <div class="g-inner">
           <img src="./img/DSC01957.jpg" alt="Portfolio still from travel shoot" loading="lazy">
         </div>
@@ -977,7 +1008,7 @@
 
       <div class="g-item reveal-pop stagger" style="--tilt:-2.5deg;" data-video-item>
         <div class="g-inner">
-          <video src="./Video/LANDSACPE.mp4" muted loop playsinline preload="metadata" aria-label="Landscape cinematic video"></video>
+          <video src="./Video/LANDSACPE.mp4" poster="./img/landsacpe-thumb.png" muted loop playsinline preload="metadata" aria-label="Landscape cinematic video"></video>
           <div class="video-overlay">
             <button class="play-btn" aria-label="Play video">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7L8 5z" fill="#161219"/></svg>
@@ -986,9 +1017,20 @@
         </div>
       </div>
 
-      <div class="g-item tall reveal-pop stagger" style="--tilt:1.5deg;" data-video-item>
+      <div class="g-item reveal-pop stagger" style="--tilt:2.5deg;" data-video-item>
         <div class="g-inner">
-          <video src="./Video/LANDSACPE.mp4" muted loop playsinline preload="metadata" aria-label="Landscape cinematic video"></video>
+          <video src="./Video/collecting colors.mp4" poster="./img/ChatGPT Image Jul 23, 2026, 05_19_27 PM.png" muted loop playsinline preload="metadata" aria-label="Collecting colors cinematic video"></video>
+          <div class="video-overlay">
+            <button class="play-btn" aria-label="Play video">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7L8 5z" fill="#161219"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+       <div class="g-item reveal-pop stagger" style="--tilt:2.5deg;" data-video-item>
+        <div class="g-inner">
+          <video src="./Video/dalai hills.mp4" poster="./img/dalai hills.png" muted loop playsinline preload="metadata" aria-label="Collecting colors cinematic video"></video>
           <div class="video-overlay">
             <button class="play-btn" aria-label="Play video">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7L8 5z" fill="#161219"/></svg>
@@ -1099,15 +1141,15 @@
         <p>Open for tourism, hospitality and personal brand projects — reels, retainers, or one-off cinematic edits.</p>
       </div>
       <div class="contact-links">
-        <a class="btn-solid" href="mailto:youremail@example.com" aria-label="Send an email">Send an Email ↗</a>
-        <a class="sub" href="https://instagram.com/rishu.gautamm" target="_blank" rel="noopener">Instagram · @rishu.gautamm</a>
+        <a class="btn-solid" href="mailto:gautam.rishu01@gmail.com" aria-label="Send an email">Send an Email ↗</a>
+        <a class="sub" href="https://instagram.com/gautamm.rishu" target="_blank" rel="noopener">Instagram · @gautamm.rishu</a>
         <a class="sub" href="https://wa.me/919818995513" target="_blank" rel="noopener">WhatsApp Me</a>
       </div>
     </div>
   </div>
 </section>
 
-<footer>© 2026 Gautam — Video Editor. Available for projects.</footer>
+<footer>© 2026 Gautam Jha.</footer>
 
 <!-- WhatsApp FAB -->
 <a class="wa-fab" href="https://wa.me/919818995513" target="_blank" rel="noopener" title="Chat on WhatsApp" aria-label="Chat on WhatsApp">
@@ -1243,6 +1285,19 @@
     });
   }
 
+  // ========== About Photo Slideshow (crossfade every few seconds) ==========
+  (function(){
+    const slides = document.querySelectorAll('#aboutPhotoWrap .about-slide');
+    if(slides.length > 1){
+      let current = 0;
+      setInterval(() => {
+        slides[current].classList.remove('is-active');
+        current = (current + 1) % slides.length;
+        slides[current].classList.add('is-active');
+      }, 3500);
+    }
+  })();
+
   // ========== Gallery Video Play/Pause ==========
   document.querySelectorAll('[data-video-item]').forEach(item => {
     const video = item.querySelector('video');
@@ -1250,40 +1305,67 @@
     const playBtn = item.querySelector('.play-btn');
     if(!video || !overlay || !playBtn) return;
 
+    let isPlaying = false;
+
     function playVideo(){
+      isPlaying = true;
       video.setAttribute('controls','');
-      video.play().catch(()=>{});
-      overlay.classList.add('hidden');
+      video.play().then(() => {
+        overlay.classList.add('hidden');
+      }).catch(err => {
+        console.log('Video play failed:', err);
+        isPlaying = false;
+      });
     }
 
     function pauseVideo(){
+      isPlaying = false;
       video.pause();
       video.removeAttribute('controls');
       overlay.classList.remove('hidden');
     }
 
+    // Play button click - only triggers play
     playBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      playVideo();
+      e.preventDefault();
+      if(!isPlaying) playVideo();
     });
 
-    item.addEventListener('click', () => {
-      if(video.paused) playVideo();
-      else pauseVideo();
+    // Click on the item (not on controls) to pause
+    item.addEventListener('click', (e) => {
+      // Don't interfere if clicking on video controls
+      if(e.target === video || e.target.closest('video')) return;
+      if(isPlaying) pauseVideo();
     });
 
+    // When video is paused (via controls or programmatically)
     video.addEventListener('pause', () => {
-      if(video.currentTime > 0 && video.currentTime < video.duration - 0.1){
-        overlay.classList.remove('hidden');
-        video.removeAttribute('controls');
-      }
+      isPlaying = false;
+      overlay.classList.remove('hidden');
+      video.removeAttribute('controls');
     });
 
+    // When video ends
     video.addEventListener('ended', () => {
+      isPlaying = false;
       overlay.classList.remove('hidden');
       video.removeAttribute('controls');
       video.currentTime = 0;
     });
+
+    // When video starts playing
+    video.addEventListener('playing', () => {
+      isPlaying = true;
+    });
+
+    // Stop playback automatically once the tile scrolls out of view
+    const scrollStopObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(!entry.isIntersecting && isPlaying) pauseVideo();
+      });
+    }, { threshold: 0.25 });
+    scrollStopObserver.observe(item);
   });
 </script>
 

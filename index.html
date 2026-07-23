@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gautam — Video Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=Caveat:wght@600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!--
+  =====================================================================
+  HOW TO ADD YOUR OWN PHOTOS (no code knowledge needed):
+  1. Put a photo of yourself next to this HTML file and name it
+     exactly:  your-photo.jpg   → this fills the round frame in the hero.
+  2. Put a second, more candid/behind-the-scenes photo and name it:
+     about-photo.jpg            → this fills the polaroid in "About".
+  3. For the gallery grid, replace the empty tiles further down —
+     search for "GALLERY TILE" comments — with your own <img>/<video>.
+  Until those files exist, friendly placeholders are shown automatically.
+  =====================================================================
+-->
+<style>
+  :root{
+    --white:#ffffff;
+    --bg-soft:#f8f4f0;
+    --ink:#161219;
+    --gray:#6f6a76;
+    --line:#eae2e6;
+
+    /* primary duo */
+    --blue:#7c5cff;        /* was blue, now electric violet */
+    --blue-dark:#5b3aeb;
+    --blue-soft:#ece5ff;
+    --orange:#ff7a33;
+    --orange-dark:#e8601a;
+    --orange-soft:#ffe9dc;
+
+    /* accent sprinkle colors */
+    --teal:#00c2a8;
+    --teal-dark:#009481;
+    --teal-soft:#d8f7f1;
+    --pink:#ff3d78;
+    --pink-dark:#d81558;
+    --pink-soft:#ffe0eb;
+    --gold:#ffb703;
+    --gold-dark:#d99400;
+    --gold-soft:#fff2d1;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--white); color:var(--ink);
+    font-family:'Inter', sans-serif; font-weight:400;
+    overflow-x:hidden;
+  }
+  .disp{font-family:'Poppins', sans-serif;}
+  .mono{font-family:'Space Mono', monospace;}
+  .hand{font-family:'Caveat', cursive;}
+  a{text-decoration:none; color:inherit;}
+  ::selection{background:var(--pink); color:var(--white);}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 5vw; position:relative; z-index:2;}
+
+  /* ========== FILM GRAIN OVERLAY (photography texture) ========== */
+  .grain{
+    position:fixed; inset:0; z-index:999; pointer-events:none;
+    opacity:0.05; mix-blend-mode:overlay;
+  }
+
+  /* ========== NAVBAR (non-sticky) ========== */
+  .navbar{
+    padding:22px 5vw; display:flex; justify-content:center;
+    position:relative; z-index:200;
+  }
+  .pill-nav{
+    display:flex; align-items:center; gap:6px;
+    background:var(--ink); border-radius:60px; padding:8px;
+    box-shadow:0 14px 30px rgba(20,21,26,0.18);
+  }
+  .pill-nav a{
+    font-family:'Poppins',sans-serif; font-size:14px; font-weight:500;
+    color:#cfd2dc; padding:11px 20px; border-radius:60px; transition:all .25s ease;
+    white-space:nowrap;
+  }
+  .pill-nav a.active{background:var(--orange); color:var(--white);}
+  .pill-nav a:hover:not(.active){color:var(--white);}
+  .pill-logo{
+    display:flex; align-items:center; gap:8px; padding:0 16px;
+    font-family:'Poppins',sans-serif; font-weight:700; color:var(--white); font-size:16px;
+  }
+  .pill-logo .sq{
+    width:30px;height:30px;border-radius:8px; background:var(--blue);
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;
+  }
+
+  /* Hamburger button */
+  .hamburger{
+    display:none;
+    flex-direction:column; gap:5px; cursor:pointer; padding:8px; z-index:210;
+    background:none; border:none;
+  }
+  .hamburger span{
+    display:block; width:24px; height:2.5px; background:var(--white); border-radius:2px;
+    transition:all .3s ease;
+  }
+  .hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px);}
+  .hamburger.open span:nth-child(2){opacity:0;}
+  .hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px);}
+
+  /* Mobile nav overlay */
+  .mobile-nav{
+    position:fixed; inset:0; background:var(--ink); z-index:199;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px;
+    transform:translateY(-100%); opacity:0; pointer-events:none;
+    transition:transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+  }
+  .mobile-nav.open{
+    transform:translateY(0); opacity:1; pointer-events:all;
+  }
+  .mobile-nav a{
+    font-family:'Poppins',sans-serif; font-size:26px; font-weight:700; color:var(--white);
+    transition:color .2s ease;
+  }
+  .mobile-nav a.active{color:var(--orange);}
+  .mobile-nav a:hover{color:var(--pink);}
+  .mobile-nav .pill-logo{
+    position:absolute; top:20px; left:5vw;
+  }
+
+  @media(max-width:900px){
+    .pill-nav a{display:none;}
+    .hamburger{display:flex;}
+    .pill-logo{padding:0 12px;}
+  }
+
+  /* ========== AMBIENT BOKEH / MOVING ELEMENTS ========== */
+  .orb-field{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
+  .orb{
+    position:absolute; border-radius:50%; filter:blur(18px);
+    opacity:0.4; mix-blend-mode:multiply; will-change:transform;
+  }
+  .orb.o-pink{background:radial-gradient(circle, var(--pink), transparent 70%); animation:driftA 16s ease-in-out infinite;}
+  .orb.o-teal{background:radial-gradient(circle, var(--teal), transparent 70%); animation:driftB 20s ease-in-out infinite;}
+  .orb.o-gold{background:radial-gradient(circle, var(--gold), transparent 70%); animation:driftC 14s ease-in-out infinite;}
+  .orb.o-purple{background:radial-gradient(circle, var(--blue), transparent 70%); animation:driftA 22s ease-in-out infinite reverse;}
+  @keyframes driftA{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(40px,-35px) scale(1.15);}}
+  @keyframes driftB{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-45px,30px) scale(0.9);}}
+  @keyframes driftC{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(25px,40px) scale(1.1);}}
+
+  /* small floating outline icons — camera / aperture / film */
+  .float-icon{
+    position:absolute; opacity:0.55; pointer-events:none;
+    animation:bobfloat 6s ease-in-out infinite;
+  }
+  .float-icon svg{width:100%; height:100%;}
+  @keyframes bobfloat{
+    0%,100%{transform:translateY(0) rotate(0deg);}
+    50%{transform:translateY(-18px) rotate(6deg);}
+  }
+
+  /* spinning aperture — pure decoration, camera motif */
+  .aperture-spin{
+    position:absolute; animation:spin 22s linear infinite; opacity:0.5; pointer-events:none;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ========== ENTRANCE ANIMATIONS ========== */
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(24px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .intro-anim{opacity:0; animation:fadeUp .8s ease forwards;}
+
+  /* ========== HERO ========== */
+  .hero{padding:60px 5vw 90px; position:relative; overflow:hidden;}
+  .hero-grid{
+    max-width:1180px; margin:0 auto; position:relative; z-index:2;
+    display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:center;
+  }
+  .exif-tag{
+    display:inline-flex; align-items:center; gap:10px;
+    font-family:'Space Mono',monospace; font-size:11.5px; font-weight:700; letter-spacing:0.03em;
+    color:var(--teal-dark); background:var(--teal-soft); padding:7px 14px; border-radius:6px;
+    margin-bottom:16px;
+  }
+  .bubble{
+    display:inline-flex; align-items:center; gap:8px;
+    border:1.5px solid var(--ink); border-radius:30px; padding:8px 18px;
+    font-family:'Poppins',sans-serif; font-size:13px; font-weight:500; margin-bottom:22px;
+  }
+  .bubble .wave{font-size:16px;}
+  h1.hero-title{
+    font-family:'Poppins',sans-serif; font-weight:700;
+    font-size:clamp(38px,5.2vw,60px); line-height:1.12; color:var(--ink);
+  }
+  h1.hero-title .accent{color:var(--orange);}
+  .hero-role{
+    font-family:'Poppins',sans-serif; font-weight:800; font-size:clamp(34px,5vw,54px);
+    background:linear-gradient(100deg, var(--blue), var(--pink) 60%, var(--orange) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    line-height:1.05; margin-top:2px;
+  }
+  .hero-copy{color:var(--gray); font-size:16px; line-height:1.7; max-width:440px; margin-top:22px;}
+  .hero-btns{display:flex; gap:14px; margin-top:32px; flex-wrap:wrap;}
+  .btn-solid{
+    background:var(--orange); color:var(--white); font-family:'Poppins',sans-serif; font-weight:600;
+    font-size:14px; padding:15px 26px; border-radius:40px; display:inline-flex; align-items:center; gap:8px;
+    box-shadow:0 10px 22px rgba(255,122,51,0.35); transition:transform .2s ease;
+  }
+  .btn-solid:hover{transform:translateY(-2px);}
+  .btn-outline{
+    border:1.5px solid var(--ink); color:var(--ink); font-family:'Poppins',sans-serif; font-weight:600;
+    font-size:14px; padding:15px 26px; border-radius:40px; transition:all .2s ease;
+  }
+  .btn-outline:hover{background:var(--ink); color:var(--white);}
+  .chip-row{display:flex; gap:12px; margin-top:34px; flex-wrap:wrap;}
+  .chip{
+    font-family:'Poppins',sans-serif; font-weight:500;
+    font-size:12.5px; padding:9px 16px; border-radius:20px;
+  }
+  .chip:nth-child(4n+1){background:var(--blue-soft); color:var(--blue-dark);}
+  .chip:nth-child(4n+2){background:var(--orange-soft); color:var(--orange-dark);}
+  .chip:nth-child(4n+3){background:var(--teal-soft); color:var(--teal-dark);}
+  .chip:nth-child(4n+4){background:var(--pink-soft); color:var(--pink-dark);}
+
+  /* hero visual / mascot + photo slot */
+  .hero-visual{position:relative; display:flex; justify-content:center; perspective:1200px;}
+  .tilt-stage{
+    position:relative; transform-style:preserve-3d; transition:transform .15s ease-out;
+    width:100%; max-width:420px;
+  }
+  .blob{
+    width:100%; max-width:420px; aspect-ratio:1/1; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, var(--orange), #ff9a5f 55%, var(--orange-dark) 100%);
+    position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden;
+    transform-style:preserve-3d;
+  }
+  .profile-photo{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:50%;
+  }
+  .avatar-fallback{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  }
+  .avatar-icon{ width:62%; opacity:0.96; }
+  .add-photo-hint{
+    position:absolute; bottom:8%; left:50%; transform:translateX(-50%);
+    background:rgba(22,18,25,0.82); color:var(--white); font-family:'Space Mono',monospace;
+    font-size:10.5px; padding:8px 14px; border-radius:20px; white-space:nowrap; text-align:center;
+  }
+  .float-card{
+    position:absolute; background:var(--white); border-radius:16px; padding:14px 18px;
+    box-shadow:0 18px 34px rgba(20,21,26,0.14); font-family:'Poppins',sans-serif;
+    transform:translateZ(60px);
+  }
+  .float-card.top{top:6%; right:-4%;}
+  .float-card .stars{color:var(--orange); font-size:14px; letter-spacing:2px;}
+  .float-card .big{font-weight:800; font-size:22px; margin-top:4px;}
+  .float-card .small{color:var(--gray); font-size:12px; font-weight:500;}
+  .float-card.bottom{bottom:4%; left:-8%; display:flex; align-items:center; gap:10px;}
+  .float-card.bottom .dot{width:9px;height:9px;border-radius:50%; background:var(--teal); box-shadow:0 0 0 4px var(--teal-soft);}
+  .float-card.bottom .small{font-size:12.5px; font-weight:600; color:var(--ink);}
+
+  .badge-3d{
+    position:absolute; background:var(--white); border-radius:16px;
+    box-shadow:0 16px 30px rgba(20,21,26,0.16); display:flex; align-items:center; justify-content:center;
+    transform:translateZ(80px); animation:bob 4.5s ease-in-out infinite;
+  }
+  .badge-3d svg{width:60%; height:60%;}
+  .badge-cam{width:60px; height:60px; top:8%; left:-10%; animation-delay:0s;}
+  .badge-laptop{width:64px; height:64px; bottom:14%; right:-12%; animation-delay:1.1s; background:var(--teal-soft);}
+  .badge-pr{
+    width:52px; height:52px; top:44%; left:-16%; background:#1c1240; animation-delay:2s;
+    color:var(--pink); font-family:'Poppins',sans-serif; font-weight:800; font-size:16px;
+  }
+  @keyframes bob{
+    0%,100%{transform:translateZ(80px) translateY(0);}
+    50%{transform:translateZ(80px) translateY(-14px);}
+  }
+  @media(max-width:900px){ .badge-3d{display:none;} }
+
+  @media(max-width:860px){
+    .hero-grid{grid-template-columns:1fr; text-align:center;}
+    .hero-visual{order:-1; margin-bottom:6px;}
+    .hero-copy{margin:22px auto 0;}
+    .hero-btns{justify-content:center;}
+    .chip-row{justify-content:center;}
+    .hero-visual{margin-top:0;}
+    .tilt-stage{max-width:280px;}
+    .float-card{padding:10px 14px;}
+    .float-card .big{font-size:18px;}
+  }
+  @media(max-width:480px){
+    .float-card.top{right:0%; top:2%;}
+    .float-card.bottom{left:0%; bottom:0%;}
+  }
+
+  /* ========== SECTION HEADS ========== */
+  .section{padding:90px 0; position:relative; overflow:hidden;}
+  .section.soft{background:var(--bg-soft);}
+  .head-center{text-align:center; max-width:640px; margin:0 auto 56px; position:relative; z-index:2;}
+  .eyebrow{
+    display:inline-block; font-family:'Poppins',sans-serif; font-weight:600; font-size:12.5px;
+    color:var(--blue-dark); background:var(--blue-soft); padding:7px 16px; border-radius:20px; margin-bottom:16px; letter-spacing:0.02em;
+  }
+  h2.h2{font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(28px,4vw,42px); color:var(--ink);}
+  h2.h2 .accent{color:var(--orange);}
+  .head-center p{color:var(--gray); margin-top:14px; font-size:15.5px; line-height:1.7;}
+
+  /* ========== SCROLL REVEAL (applied per-element, staggered) ========== */
+  .reveal{opacity:0; transform:translateY(28px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+  .reveal-left{opacity:0; transform:translateX(-36px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal-left.in{opacity:1; transform:translateX(0);}
+  .reveal-right{opacity:0; transform:translateX(36px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal-right.in{opacity:1; transform:translateX(0);}
+  .reveal-pop{opacity:0; transform:scale(.9) rotate(-2deg); transition:opacity .6s ease, transform .6s ease;}
+  .reveal-pop.in{opacity:1; transform:scale(1) rotate(var(--tilt, 0deg));}
+  .stagger:nth-child(1){transition-delay:.02s;}
+  .stagger:nth-child(2){transition-delay:.12s;}
+  .stagger:nth-child(3){transition-delay:.22s;}
+  .stagger:nth-child(4){transition-delay:.32s;}
+  .stagger:nth-child(5){transition-delay:.42s;}
+  .stagger:nth-child(6){transition-delay:.52s;}
+  .stagger:nth-child(7){transition-delay:.62s;}
+
+  /* ========== ABOUT + POLAROID PHOTO SLOT ========== */
+  .about-grid{display:grid; grid-template-columns:0.95fr 1.05fr; gap:60px; align-items:center; position:relative; z-index:2;}
+  .about-grid .head-center{text-align:left; margin:0; max-width:none;}
+  .polaroid{
+    background:var(--white); padding:16px 16px 30px; border-radius:4px;
+    box-shadow:0 24px 44px rgba(20,21,26,0.16); max-width:340px; margin:0 auto;
+    transform:rotate(-3deg); position:relative;
+  }
+  .polaroid::before{
+    content:''; position:absolute; top:-14px; left:50%; transform:translateX(-50%) rotate(-4deg);
+    width:80px; height:26px; background:rgba(255,183,3,0.55); border:1px solid rgba(217,148,0,0.3);
+  }
+  .polaroid-photo{
+    aspect-ratio:4/5; border-radius:2px; position:relative; overflow:hidden;
+    background:linear-gradient(135deg, var(--blue-soft), var(--pink-soft));
+  }
+  .polaroid-photo img{width:100%; height:100%; object-fit:cover; position:relative; z-index:1;}
+  .polaroid-empty-hint{
+    display:none; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    font-family:'Space Mono',monospace; color:var(--blue-dark); text-align:center; font-size:11px; padding:20px;
+  }
+  .polaroid-empty-hint .plus{font-size:30px; font-weight:700;}
+  .polaroid-photo.empty .polaroid-empty-hint{display:flex;}
+  .polaroid-caption{
+    font-family:'Caveat',cursive; font-size:22px; text-align:center; color:var(--ink); margin-top:14px;
+  }
+  .corner{position:absolute; width:18px; height:18px; border-color:var(--orange); z-index:2;}
+  .corner.tl{top:8px; left:8px; border-top:3px solid; border-left:3px solid;}
+  .corner.tr{top:8px; right:8px; border-top:3px solid; border-right:3px solid;}
+  .corner.bl{bottom:34px; left:8px; border-bottom:3px solid; border-left:3px solid;}
+  .corner.br{bottom:34px; right:8px; border-bottom:3px solid; border-right:3px solid;}
+  @media(max-width:860px){
+    .about-grid{grid-template-columns:1fr; gap:36px;}
+    .about-grid .head-center{text-align:center;}
+    .polaroid{order:-1;}
+  }
+
+  /* ========== EXPERIENCE / TIMELINE ========== */
+  .exp-timeline{
+    max-width:800px; margin:0 auto;
+    position:relative; z-index:2;
+    padding-left:0;
+  }
+  .exp-timeline::before{
+    content:''; position:absolute; left:24px; top:0; bottom:0; width:2px;
+    background:repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 12px);
+  }
+  .exp-card{
+    position:relative; padding-left:64px; padding-bottom:40px;
+  }
+  .exp-card:last-child{padding-bottom:0;}
+  .exp-card::before{
+    content:''; position:absolute; left:16px; top:6px; width:18px; height:18px;
+    border-radius:50%; background:var(--orange); border:4px solid var(--white);
+    box-shadow:0 0 0 2px var(--line); z-index:2;
+  }
+  .exp-card:nth-child(3n+2)::before{background:var(--blue);}
+  .exp-card:nth-child(3n+3)::before{background:var(--teal);}
+
+  .exp-inner{
+    background:var(--white); border:1px solid var(--line); border-radius:20px;
+    padding:28px 30px; transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .exp-card:hover .exp-inner{
+    transform:translateY(-4px); box-shadow:0 16px 32px rgba(20,21,26,0.08);
+  }
+  .exp-header{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;
+  }
+  .exp-org{
+    font-family:'Poppins',sans-serif; font-weight:700; font-size:20px; color:var(--ink);
+  }
+  .exp-tag{
+    font-family:'Poppins',sans-serif; font-size:11px; font-weight:600;
+    color:var(--gray); background:var(--bg-soft); padding:5px 12px; border-radius:20px;
+    white-space:nowrap;
+  }
+  .exp-role{
+    font-family:'Poppins',sans-serif; font-weight:700; font-size:16px; color:var(--blue-dark); margin-top:10px;
+  }
+  .exp-desc{
+    color:var(--gray); font-size:14.5px; line-height:1.7; margin-top:8px;
+  }
+  .exp-date{
+    font-family:'Poppins',sans-serif; font-size:12px; font-weight:600; color:var(--orange); margin-top:14px;
+  }
+
+  @media(max-width:560px){
+    .exp-timeline::before{left:18px;}
+    .exp-card{padding-left:50px; padding-bottom:32px;}
+    .exp-card::before{left:10px; width:16px; height:16px;}
+    .exp-inner{padding:22px 20px;}
+    .exp-org{font-size:18px;}
+    .exp-header{flex-direction:column; gap:8px;}
+  }
+
+  /* ========== SERVICES ========== */
+  .services{display:grid; grid-template-columns:repeat(4,1fr); gap:22px; position:relative; z-index:2;}
+  .svc-card{
+    background:var(--white); border:1px solid var(--line); border-radius:20px; padding:32px 26px;
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .svc-card:hover{transform:translateY(-6px); box-shadow:0 20px 34px rgba(20,21,26,0.08);}
+  .svc-icon{
+    width:52px;height:52px;border-radius:14px; display:flex; align-items:center; justify-content:center;
+    font-size:22px; margin-bottom:18px;
+  }
+  .svc-card:nth-child(4n+1) .svc-icon{background:var(--orange-soft); color:var(--orange-dark);}
+  .svc-card:nth-child(4n+2) .svc-icon{background:var(--blue-soft); color:var(--blue-dark);}
+  .svc-card:nth-child(4n+3) .svc-icon{background:var(--teal-soft); color:var(--teal-dark);}
+  .svc-card:nth-child(4n+4) .svc-icon{background:var(--pink-soft); color:var(--pink-dark);}
+  .svc-card h3{font-family:'Poppins',sans-serif; font-weight:600; font-size:17px; margin-bottom:10px;}
+  .svc-card p{color:var(--gray); font-size:14px; line-height:1.65;}
+  @media(max-width:900px){ .services{grid-template-columns:1fr 1fr;} }
+  @media(max-width:560px){ .services{grid-template-columns:1fr;} }
+
+  /* ========== SKILLS STRIP ========== */
+  .strip{background:var(--ink); padding:26px 0; overflow:hidden;}
+  .strip-track{display:flex; gap:60px; width:max-content; animation:marquee 24s linear infinite;}
+  .strip-track span{font-family:'Poppins',sans-serif; font-weight:600; font-size:19px; color:#d8dae2; white-space:nowrap;}
+  .strip-track span.c1{color:var(--orange);}
+  .strip-track span.c2{color:var(--blue);}
+  .strip-track span.c3{color:var(--teal);}
+  .strip-track span.c4{color:var(--pink);}
+  .strip-track span.dot-sep{color:var(--gold);}
+  @keyframes marquee{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+  /* ========== GALLERY (polaroid-style tiles) ========== */
+  .gallery-grid{display:grid; grid-template-columns:repeat(3,1fr); grid-auto-rows:230px; gap:22px; position:relative; z-index:2;}
+  .g-item{
+    position:relative; border-radius:6px; overflow:hidden; background:var(--white);
+    padding:10px 10px 30px; box-shadow:0 14px 26px rgba(20,21,26,0.1);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;
+    transition:transform .35s ease, box-shadow .35s ease;
+    cursor:pointer;
+  }
+  .g-item .g-inner{
+    position:absolute; inset:10px 10px 30px; border-radius:2px;
+    background:linear-gradient(135deg, #f0f2f8, #e5e8f2);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;
+  }
+  .g-item:nth-child(3n+1){transform:rotate(-2.5deg);}
+  .g-item:nth-child(3n+2){transform:rotate(1.5deg);}
+  .g-item:nth-child(3n+3){transform:rotate(-1.5deg);}
+  .g-item:hover{transform:scale(1.04) rotate(0deg) translateY(-4px); box-shadow:0 22px 38px rgba(20,21,26,0.18); z-index:5;}
+  .g-item.tall{grid-row:span 2;}
+  .g-item .g-icon{
+    width:44px;height:44px; border-radius:50%; background:var(--white); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 18px rgba(20,21,26,0.12); color:var(--gray); font-size:17px; transition:background .3s ease, color .3s ease;
+  }
+  .g-item:nth-child(4n+1) .g-icon{background:var(--orange-soft); color:var(--orange-dark);}
+  .g-item:nth-child(4n+2) .g-icon{background:var(--blue-soft); color:var(--blue-dark);}
+  .g-item:nth-child(4n+3) .g-icon{background:var(--teal-soft); color:var(--teal-dark);}
+  .g-item:nth-child(4n+4) .g-icon{background:var(--pink-soft); color:var(--pink-dark);}
+  .g-item .g-label{font-family:'Caveat',cursive; font-weight:700; font-size:18px; color:var(--gray);}
+  @media(max-width:860px){ .gallery-grid{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:560px){ .gallery-grid{grid-template-columns:1fr; grid-auto-rows:210px;} .g-item.tall{grid-row:span 1;} .g-item{transform:none !important;} .g-item:hover{transform:translateY(-4px) !important;} }
+
+  /* ========== WHATSAPP FAB ========== */
+  .wa-fab{
+    position:fixed; right:26px; bottom:26px; z-index:300;
+    width:60px; height:60px; border-radius:50%; background:#25D366;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 12px 26px rgba(37,211,102,0.45);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .wa-fab:hover{transform:scale(1.08) translateY(-2px); box-shadow:0 16px 32px rgba(37,211,102,0.55);}
+  .wa-fab svg{width:30px; height:30px;}
+  .wa-fab::before{
+    content:''; position:absolute; inset:0; border-radius:50%; background:#25D366;
+    animation:wa-pulse 2.4s ease-out infinite; z-index:-1;
+  }
+  @keyframes wa-pulse{
+    0%{transform:scale(1); opacity:0.55;}
+    100%{transform:scale(1.9); opacity:0;}
+  }
+
+  /* ========== CONTACT ========== */
+  .contact-card{
+    max-width:1000px; margin:0 auto; background:linear-gradient(120deg, var(--blue) 0%, var(--pink-dark) 100%);
+    border-radius:28px; padding:60px 5vw; display:flex; justify-content:space-between; align-items:center; gap:30px; flex-wrap:wrap;
+    color:var(--white); position:relative; overflow:hidden; z-index:2;
+  }
+  .contact-card::after{
+    content:''; position:absolute; right:-60px; top:-60px; width:220px;height:220px; border-radius:50%;
+    background:rgba(255,183,3,0.32);
+  }
+  .contact-card::before{
+    content:''; position:absolute; left:-40px; bottom:-70px; width:180px;height:180px; border-radius:50%;
+    background:rgba(0,194,168,0.28);
+  }
+  .contact-card h2{font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(26px,4vw,38px); position:relative; z-index:1;}
+  .contact-card p{color:#ece5ff; margin-top:12px; max-width:380px; font-size:15px; line-height:1.6; position:relative; z-index:1;}
+  .contact-links{display:flex; flex-direction:column; gap:12px; position:relative; z-index:1;}
+  .contact-links a.btn-solid{background:var(--white); color:var(--blue-dark); box-shadow:none;}
+  .contact-links .sub{font-family:'Poppins',sans-serif; font-size:13px; color:#ece5ff;}
+  .contact-links .sub:hover{color:var(--white);}
+
+  footer{
+    text-align:center; padding:36px 5vw; color:var(--gray); font-size:13px; font-family:'Poppins',sans-serif;
+  }
+
+  /* ========== PARALLAX LINE SYSTEM (mouse-follow) ========== */
+  .parallax-layer {
+    position: absolute; inset: 0; pointer-events: none; overflow: hidden; will-change: transform; z-index:0;
+  }
+  .pline { position: absolute; will-change: transform; }
+  .pline svg { display: block; }
+  .l1 .pline { opacity: 0.5; }
+  .l2 .pline { opacity: 0.75; }
+  .l3 .pline { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+  .g-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* or contain */
+    display: block;
+}
+.g-inner {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.g-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;   /* fills the card */
+    display: block;
+    border-radius: inherit;
+}
+.wrap {
+    max-width: 1200px;
+    margin: 0 auto;      /* Centers the section */
+    padding: 0 20px;
+}
+
+.head-center {
+    text-align: center;
+}
+
+.services {
+    display: flex;
+    justify-content: center; /* Centers the cards */
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+</style>
+</head>
+<body>
+
+<!-- Film grain texture, sits over everything at low opacity -->
+<svg class="grain" xmlns="http://www.w3.org/2000/svg">
+  <filter id="grainFilter"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter>
+  <rect width="100%" height="100%" filter="url(#grainFilter)"/>
+</svg>
+
+<!-- ========== NAVBAR (non-sticky, scroll-spy updates active link) ========== -->
+<div class="navbar" id="siteNav">
+  <div class="pill-nav">
+    <a href="#home" class="active">Home</a>
+    <a href="#about">About</a>
+    <a href="#gallery">Gallery</a>
+    <div class="pill-logo"><span class="sq">G</span>GAUTAM</div>
+    <a href="#work">Work</a>
+    <a href="#services">Services</a>
+    <a href="#contact">Contact</a>
+    <!-- Hamburger -->
+    <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</div>
+
+<!-- Mobile Nav Overlay -->
+<div class="mobile-nav" id="mobileNav">
+  <div class="pill-logo"><span class="sq">G</span>GAUTAM</div>
+  <a href="#home" onclick="closeMenu()">Home</a>
+  <a href="#about" onclick="closeMenu()">About</a>
+  <a href="#gallery" onclick="closeMenu()">Gallery</a>
+  <a href="#work" onclick="closeMenu()">Work</a>
+  <a href="#services" onclick="closeMenu()">Services</a>
+  <a href="#contact" onclick="closeMenu()">Contact</a>
+</div>
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="home">
+  <div class="orb-field">
+    <span class="orb o-pink" style="width:180px;height:180px; top:6%; left:2%;"></span>
+    <span class="orb o-teal" style="width:140px;height:140px; bottom:8%; right:6%;"></span>
+    <span class="orb o-gold" style="width:110px;height:110px; top:60%; left:8%;"></span>
+  </div>
+  <div class="float-icon" style="top:12%; left:6%; width:34px; height:34px; animation-delay:0s;">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z" stroke="#7c5cff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.6" stroke="#7c5cff" stroke-width="1.6"/></svg>
+  </div>
+  <div class="float-icon" style="top:70%; right:8%; width:28px; height:28px; animation-delay:2s;">
+    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#ff3d78" stroke-width="1.6"/><circle cx="12" cy="12" r="3.2" stroke="#ff3d78" stroke-width="1.6"/></svg>
+  </div>
+  <div class="aperture-spin" style="top:20%; right:14%; width:60px; height:60px; display:none;" id="apertureDecor">
+    <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="26" stroke="#ffb703" stroke-width="1.5" stroke-dasharray="4 6"/></svg>
+  </div>
+
+  <div class="parallax-layer l1" data-speed="0.03">
+    <div class="pline" style="top:8%; left:2%;">
+      <svg width="140" height="140" viewBox="0 0 140 140"><path d="M0 100 L60 40 L140 90" stroke="#ece5ff" stroke-width="3" fill="none"/></svg>
+    </div>
+    <div class="pline" style="top:70%; left:80%;">
+      <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" stroke="#d8f7f1" stroke-width="2" fill="none"/></svg>
+    </div>
+    <div class="pline" style="top:35%; left:85%;">
+      <svg width="100" height="60" viewBox="0 0 100 60"><line x1="0" y1="30" x2="100" y2="30" stroke="#ffe9dc" stroke-width="3"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l2" data-speed="0.08">
+    <div class="pline" style="top:15%; left:70%;">
+      <svg width="160" height="80" viewBox="0 0 160 80">
+        <line x1="0" y1="10" x2="160" y2="10" stroke="#ffe0eb" stroke-width="3"/>
+        <line x1="20" y1="40" x2="140" y2="40" stroke="#ece5ff" stroke-width="3"/>
+        <line x1="0" y1="70" x2="100" y2="70" stroke="#ffe9dc" stroke-width="3"/>
+      </svg>
+    </div>
+    <div class="pline" style="top:75%; left:5%;">
+      <svg width="80" height="80" viewBox="0 0 80 80"><rect x="10" y="10" width="60" height="60" rx="12" stroke="#c9d4f5" stroke-width="2" fill="none"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l3" data-speed="0.15">
+    <div class="pline" style="top:5%; left:45%;">
+      <svg width="50" height="50" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" stroke="#ff7a33" stroke-width="2" fill="none" opacity="0.4"/></svg>
+    </div>
+    <div class="pline" style="top:80%; left:55%;">
+      <svg width="90" height="30" viewBox="0 0 90 30"><line x1="0" y1="15" x2="90" y2="15" stroke="#7c5cff" stroke-width="2" opacity="0.3"/></svg>
+    </div>
+  </div>
+
+  <div class="hero-grid">
+    <div>
+      <div class="exif-tag intro-anim" style="animation-delay:.05s;">ISO 200 · f/1.8 · 1/125s · 35mm</div>
+      <div class="bubble intro-anim" style="animation-delay:.12s;"><span class="wave">👋</span> Hello!</div>
+      <h1 class="hero-title intro-anim" style="animation-delay:.2s;">I'm <span class="accent">Gautam</span>,</h1>
+      <div class="hero-role intro-anim" style="animation-delay:.28s;">Video Editor</div>
+      <p class="hero-copy intro-anim" style="animation-delay:.36s;">I shoot and edit cinematic reels, travel pages,— turning everyday footage into content that actually gets watched.</p>
+      <div class="hero-btns intro-anim" style="animation-delay:.44s;">
+        <a href="#work" class="btn-solid">Portfolio ↗</a>
+        <a href="#contact" class="btn-outline">Hire me</a>
+      </div>
+      <div class="chip-row intro-anim" style="animation-delay:.52s;">
+        <div class="chip">Premiere Pro</div>
+        <div class="chip">Canva</div>
+        <div class="chip">Camera</div>
+        <div class="chip">Travel · Fitness</div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="tilt-stage" id="tiltStage">
+        <!-- ===== YOUR PHOTO GOES HERE ===== -->
+        <!-- Save a square-ish photo of yourself as "your-photo.jpg" next to this file -->
+        <div class="blob">
+          <img src="./img/self.jpg" alt="Gautam" class="profile-photo" id="profilePhoto"
+               onerror="this.style.display='none'; document.getElementById('avatarFallback').style.display='flex';">
+          <div class="avatar-fallback" id="avatarFallback" style="display:none;">
+            <svg class="avatar-icon" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="100" cy="78" r="46" fill="#14151a" fill-opacity="0.9"/>
+              <path d="M20 218c0-52 36-90 80-90s80 38 80 90" fill="#14151a" fill-opacity="0.9"/>
+              <circle cx="150" cy="46" r="20" fill="#7c5cff"/>
+              <path d="M143 46l5 5 10-10" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="add-photo-hint">📷 Add "your-photo.jpg" here</div>
+          </div>
+        </div>
+        <div class="float-card top">
+          <div class="stars">★★★★★</div>
+          <div class="big">1+ Yrs</div>
+          <div class="small">Experience</div>
+        </div>
+        <div class="float-card bottom">
+          <span class="dot"></span>
+          <span class="small">Available for Projects</span>
+        </div>
+        <div class="badge-3d badge-cam" title="Camera">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z" stroke="#14151a" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle cx="12" cy="13" r="3.6" stroke="#ff7a33" stroke-width="1.6"/>
+          </svg>
+        </div>
+        <div class="badge-3d badge-laptop" title="Laptop">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="5" width="16" height="10.5" rx="1.2" stroke="#00c2a8" stroke-width="1.6"/>
+            <path d="M2 18.5h20l-1.6-2.3H3.6L2 18.5z" stroke="#14151a" stroke-width="1.6" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="badge-3d badge-pr" title="Premiere Pro">Pr</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ABOUT (with polaroid photo slot) ========== -->
+<section id="about" class="section soft">
+  <div class="orb-field">
+    <span class="orb o-purple" style="width:160px;height:160px; top:10%; right:4%;"></span>
+    <span class="orb o-gold" style="width:100px;height:100px; bottom:10%; left:4%;"></span>
+  </div>
+  <div class="parallax-layer l1" data-speed="0.03">
+    <div class="pline" style="top:10%; left:6%;">
+      <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" stroke="#ece5ff" stroke-width="2" fill="none"/></svg>
+    </div>
+    <div class="pline" style="top:75%; left:85%;">
+      <svg width="100" height="60" viewBox="0 0 100 60"><line x1="0" y1="30" x2="100" y2="30" stroke="#ffe0eb" stroke-width="3"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l2" data-speed="0.08">
+    <div class="pline" style="top:20%; left:75%;">
+      <svg width="130" height="70" viewBox="0 0 130 70">
+        <line x1="0" y1="10" x2="130" y2="10" stroke="#ffe9dc" stroke-width="3"/>
+        <line x1="10" y1="35" x2="120" y2="35" stroke="#d8f7f1" stroke-width="3"/>
+        <line x1="0" y1="60" x2="90" y2="60" stroke="#ece5ff" stroke-width="3"/>
+      </svg>
+    </div>
+    <div class="pline" style="top:60%; left:10%;">
+      <svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,5 55,50 5,50" stroke="#ffccaa" stroke-width="2" fill="none"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l3" data-speed="0.15">
+    <div class="pline" style="top:45%; left:40%;">
+      <svg width="40" height="40" viewBox="0 0 40 40"><path d="M5 35 L20 5 L35 35" stroke="#ff7a33" stroke-width="2" fill="none" opacity="0.4"/></svg>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="about-grid">
+      <div class="head-center reveal-left">
+        <span class="eyebrow">ABOUT ME</span>
+        <h2 class="h2">Editing With <span class="accent" style="color:var(--blue);">Rhythm</span> &amp; Intent</h2>
+        <p>Freelance video editor and social media manager. I split my time between cinematic travel content, gym and fitness edits, and social strategy for hospitality brands — always shooting as much as I cut.</p>
+      </div>
+      <!-- ===== SECOND PHOTO SLOT — a candid / behind-the-scenes shot ===== -->
+      <!-- Save it as "about-photo.jpg" next to this file -->
+      <div class="polaroid reveal-pop" style="--tilt:-3deg;">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="polaroid-photo" id="aboutPhotoWrap">
+          <img src="./img/DSC01961.jpg" alt="Gautam behind the camera" id="aboutPhoto"
+               onerror="this.style.display='none'; document.getElementById('aboutPhotoWrap').classList.add('empty');">
+          <div class="polaroid-empty-hint">
+            <span class="plus">＋</span>
+            Add a photo<br><span>save as about-photo.jpg</span>
+          </div>
+        </div>
+        <div class="polaroid-caption">on set, always shooting</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== WORK / EXPERIENCE ========== -->
+<section id="work" class="section">
+  <div class="orb-field">
+    <span class="orb o-teal" style="width:130px;height:130px; top:6%; right:6%;"></span>
+    <span class="orb o-pink" style="width:110px;height:110px; bottom:14%; left:3%;"></span>
+  </div>
+  <div class="parallax-layer l1" data-speed="0.03">
+    <div class="pline" style="top:12%; left:3%;">
+      <svg width="140" height="80" viewBox="0 0 140 80"><line x1="0" y1="40" x2="140" y2="40" stroke="#ece5ff" stroke-width="2"/></svg>
+    </div>
+    <div class="pline" style="top:80%; left:78%;">
+      <svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#ffe9dc" stroke-width="2" fill="none"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l2" data-speed="0.08">
+    <div class="pline" style="top:25%; left:80%;">
+      <svg width="80" height="80" viewBox="0 0 80 80"><rect x="10" y="10" width="60" height="60" rx="10" stroke="#c9d4f5" stroke-width="2" fill="none"/></svg>
+    </div>
+    <div class="pline" style="top:65%; left:5%;">
+      <svg width="120" height="40" viewBox="0 0 120 40"><line x1="0" y1="20" x2="120" y2="20" stroke="#ffe0eb" stroke-width="3"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l3" data-speed="0.15">
+    <div class="pline" style="top:50%; left:50%;">
+      <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="10" stroke="#7c5cff" stroke-width="2" fill="none" opacity="0.3"/></svg>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="head-center reveal">
+      <span class="eyebrow">EXPERIENCE</span>
+      <h2 class="h2">My <span class="accent">Work Experience</span></h2>
+    </div>
+
+    <div class="exp-timeline">
+      <div class="exp-card reveal-left">
+        <div class="exp-inner">
+          <div class="exp-header">
+            <h3 class="exp-org">Grip&amp;Grab</h3>
+            <span class="exp-tag">Calisthenics Gym</span>
+          </div>
+          <div class="exp-role">Video Editor</div>
+          <p class="exp-desc">Training clips and content edited for rhythm and energy on the gym floor. Shot and cut dynamic workout footage that drove engagement for the brand's social channels.</p>
+          <a href="https://instagram.com/gripandgrab" style="color:#ff7a33;">@gripandgrab</a>    
+          <div class="exp-date">2025 — 2026</div>
+        </div>
+      </div>
+
+      <div class="exp-card reveal-right">
+        <div class="exp-inner">
+          <div class="exp-header">
+            <h3 class="exp-org">Haristhenics</h3>
+            <span class="exp-tag">Calisthenics Creator</span> 
+           
+         </div>
+          <div class="exp-role">Video Editor</div>
+          <p class="exp-desc">Form, training, and transformation edits shot and cut on-site. Built a content library of progressive calisthenics tutorials and client transformation stories.</p>
+         <a href="https://instagram.com/haristhenics" style="color:#ff7a33;">@haristhenics</a>      
+          <div class="exp-date">2025 — 2026</div>
+        </div>
+      </div>
+
+      <div class="exp-card reveal-left">
+        <div class="exp-inner">
+          <div class="exp-header">
+            <h3 class="exp-org">@gautamm.rishu</h3>
+            <span class="exp-tag">Personal Brand</span>
+          </div>
+          <div class="exp-role">Cinematic Travel Creator</div>
+          <p class="exp-desc">Personal page testing what stops the scroll — the lab for new shooting and editing ideas. Travel reels, cinematic b-roll, and storytelling experiments across India.</p>
+    <a href="https://instagram.com/gautamm.rishu" style="color:#ff7a33;">@gautamm.rishu</a>    
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== GALLERY ========== -->
+<section id="gallery" class="section soft">
+  <div class="orb-field">
+    <span class="orb o-gold" style="width:150px;height:150px; top:8%; left:4%;"></span>
+    <span class="orb o-purple" style="width:120px;height:120px; bottom:10%; right:5%;"></span>
+  </div>
+  <div class="parallax-layer l1" data-speed="0.03">
+    <div class="pline" style="top:8%; left:5%;">
+      <svg width="120" height="120" viewBox="0 0 120 120"><path d="M10 110 L60 20 L110 80" stroke="#ece5ff" stroke-width="2" fill="none"/></svg>
+    </div>
+    <div class="pline" style="top:85%; left:82%;">
+      <svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" stroke="#ffe0eb" stroke-width="2" fill="none"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l2" data-speed="0.08">
+    <div class="pline" style="top:18%; left:72%;">
+      <svg width="100" height="50" viewBox="0 0 100 50"><line x1="0" y1="25" x2="100" y2="25" stroke="#c9d4f5" stroke-width="2"/></svg>
+    </div>
+    <div class="pline" style="top:70%; left:8%;">
+      <svg width="60" height="60" viewBox="0 0 60 60"><rect x="5" y="5" width="50" height="50" rx="8" stroke="#d8f7f1" stroke-width="2" fill="none"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l3" data-speed="0.15">
+    <div class="pline" style="top:40%; left:45%;">
+      <svg width="40" height="40" viewBox="0 0 40 40"><polygon points="20,2 38,38 2,38" stroke="#ff7a33" stroke-width="2" fill="none" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="head-center reveal">
+      <span class="eyebrow">GALLERY</span>
+      <h2 class="h2">Photos &amp; <span class="accent">Video Work</span></h2>
+      <p>A placeholder gallery, styled like a contact sheet — swap these tiles for your own reels, behind-the-scenes stills, and client edits.</p>
+    </div>
+  <div class="gallery-grid">
+
+  <div class="g-item tall reveal-pop stagger" style="--tilt:-2.5deg;">
+    <div class="g-inner">
+      <img src="./img/DSC01957.jpg" alt="Portfolio Image">
+    </div>
+  </div>
+
+  <div class="g-item reveal-pop stagger" style="--tilt:1.5deg;">
+    <div class="g-inner">
+      <img src="./img/img 2/IMG_8650.00_00_38_40.Still003.jpg" alt="Portfolio Image">
+    </div>
+  </div>
+
+  <div class="g-item reveal-pop stagger" style="--tilt:-1.5deg;">
+    <div class="g-inner">
+      <img src="./img/img_3/IMG_8650.00_01_25_23.Still006.jpg" alt="Portfolio Image">
+    </div>
+  </div>
+
+  <div class="g-item reveal-pop stagger" style="--tilt:-2.5deg;">
+    <div class="g-inner">
+     <video src="./Video/collecting colours in rishikesh.mp4"autoplay></video>
+    </div>
+  </div>
+
+  <div class="g-item tall reveal-pop stagger" style="--tilt:1.5deg;">
+    <div class="g-inner">
+    <video src="./Video/LANDSACPE.mp4" autoplay ></video>
+    </div>
+  </div>
+
+  <div class="g-item reveal-pop stagger" style="--tilt:-1.5deg;">
+    <div class="g-inner">
+      <img src="./img/DSC01961.jpg" alt="Portfolio Image">
+    </div>
+  </div>
+
+  <div class="g-item reveal-pop stagger" style="--tilt:2.5deg;">
+    <div class="g-inner">
+      <img src="./img/DSC01962.jpg" alt="Portfolio Image">
+    </div>
+  </div>
+
+</div>
+  </div>
+</section>
+
+<!-- ========== SERVICES ========== -->
+<section id="services" class="section">
+  <div class="orb-field">
+    <span class="orb o-pink" style="width:140px;height:140px; top:10%; right:6%;"></span>
+    <span class="orb o-teal" style="width:110px;height:110px; bottom:8%; left:6%;"></span>
+  </div>
+  <div class="parallax-layer l1" data-speed="0.03">
+    <div class="pline" style="top:10%; left:8%;">
+      <svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#ece5ff" stroke-width="2" fill="none"/></svg>
+    </div>
+    <div class="pline" style="top:80%; left:80%;">
+      <svg width="120" height="50" viewBox="0 0 120 50"><line x1="0" y1="25" x2="120" y2="25" stroke="#ffe9dc" stroke-width="2"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l2" data-speed="0.08">
+    <div class="pline" style="top:20%; left:78%;">
+      <svg width="70" height="70" viewBox="0 0 70 70"><rect x="5" y="5" width="60" height="60" rx="10" stroke="#c9d4f5" stroke-width="2" fill="none"/></svg>
+    </div>
+    <div class="pline" style="top:65%; left:5%;">
+      <svg width="90" height="40" viewBox="0 0 90 40"><line x1="0" y1="20" x2="90" y2="20" stroke="#ffe0eb" stroke-width="3"/></svg>
+    </div>
+  </div>
+  <div class="parallax-layer l3" data-speed="0.15">
+    <div class="pline" style="top:48%; left:48%;">
+      <svg width="35" height="35" viewBox="0 0 35 35"><circle cx="17.5" cy="17.5" r="12" stroke="#7c5cff" stroke-width="2" fill="none" opacity="0.3"/></svg>
+    </div>
+  </div>
+<div class="wrap">
+  <div class="head-center reveal">
+    <span class="eyebrow">SERVICES</span>
+    <h2 class="h2">What I <span class="accent">Do</span></h2>
+  </div>
+
+  <div class="services">
+    <div class="svc-card reveal-pop stagger">
+      <div class="svc-icon">🎬</div>
+      <h3>Cinematic Reels</h3>
+      <p>Story-led travel edits built around light, motion, and place.</p>
+    </div>
+
+    <div class="svc-card reveal-pop stagger">
+      <div class="svc-icon">📲</div>
+      <h3>Social Media Management</h3>
+      <p>Content pillars, posting cadence, and analytics so an account grows on purpose.</p>
+    </div>
+
+    <div class="svc-card reveal-pop stagger">
+      <div class="svc-icon">🏨</div>
+      <h3>Travel &amp; Shoot</h3>
+      <p>On-the-ground shooting and editing for Travel Brands.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ========== SKILLS STRIP ========== -->
+<div class="strip">
+  <div class="strip-track">
+    <span class="c1">PREMIERE PRO</span><span class="dot-sep">•</span>
+    <span>SHOT ON IPHONE</span><span class="dot-sep">•</span>
+    <span class="c2">CANVA</span><span class="dot-sep">•</span>
+    <span>MIC</span><span class="dot-sep">•</span>
+    <span class="c3">SOCIAL STRATEGY</span><span class="dot-sep">•</span>
+    <span>CINEMATIC TRAVEL</span><span class="dot-sep">•</span>
+    <span class="c4">FITNESS CONTENT</span><span class="dot-sep">•</span>
+    <span>TRAVEL</span><span class="dot-sep">•</span>
+    <span class="c1">PREMIERE PRO</span><span class="dot-sep">•</span>
+    <span>LENS</span><span class="dot-sep">•</span>
+    <span class="c2">CANVA</span><span class="dot-sep">•</span>
+    <span>MIC</span><span class="dot-sep">•</span>
+    <span class="c3">SOCIAL STRATEGY</span><span class="dot-sep">•</span>
+    <span>CINEMATIC TRAVEL</span><span class="dot-sep">•</span>
+    <span class="c4">FITNESS CONTENT</span><span class="dot-sep">•</span>
+    <span>TRAVEL</span><span class="dot-sep">•</span>
+  </div>
+</div>
+
+<!-- ========== CONTACT ========== -->
+<section id="contact" class="section">
+  <div class="wrap">
+    <div class="contact-card reveal-pop">
+      <div>
+        <h2>Let's Shoot Something.</h2>
+        <p>Open for tourism, hospitality and personal brand projects — reels, retainers, or one-off cinematic edits.</p>
+      </div>
+      <div class="contact-links">
+        <a class="btn-solid" href="mailto:youremail@example.com">Send an Email ↗</a>
+        <a class="sub" href="https://instagram.com/rishu.gautamm" target="_blank">Instagram · @rishu.gautamm</a>
+        <a class="sub" href="https://wa.me/919818995513" target="_blank">WhatsApp Me</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>© 2026 Gautam — Video Editor. Available for projects.</footer>
+
+<!-- WhatsApp FAB -->
+<a class="wa-fab" href="https://wa.me/91XXXXXXXXXX" target="_blank" title="Chat on WhatsApp">
+  <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 3C9.4 3 4 8.4 4 15c0 2.3.6 4.4 1.7 6.3L4 29l7.9-1.6c1.8.9 3.9 1.4 6.1 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z" fill="#fff"/>
+    <path d="M23.3 19.1c-.4-.2-2.2-1.1-2.5-1.2-.3-.1-.6-.2-.8.2-.2.4-.9 1.2-1.1 1.4-.2.2-.4.3-.8.1-.4-.2-1.6-.6-3-1.9-1.1-1-1.9-2.2-2.1-2.6-.2-.4 0-.6.2-.8.2-.2.4-.4.5-.6.2-.2.2-.4.4-.6.1-.2.1-.5 0-.7-.1-.2-.8-2-1.1-2.7-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.5-.3.4-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.5c.2.2 2.3 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.2 1.5.2 2.1.1.6-.1 2.2-.9 2.5-1.8.3-.9.3-1.6.2-1.8-.1-.1-.3-.2-.7-.4z" fill="#25D366"/>
+  </svg>
+</a>
+
+<script>
+  // ========== Hamburger Menu ==========
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const mobileNav = document.getElementById('mobileNav');
+
+  hamburgerBtn.addEventListener('click', () => {
+    hamburgerBtn.classList.toggle('open');
+    mobileNav.classList.toggle('open');
+    document.body.style.overflow = mobileNav.classList.contains('open') ? 'hidden' : '';
+  });
+
+  function closeMenu(){
+    hamburgerBtn.classList.remove('open');
+    mobileNav.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // ========== Scroll-spy: keep navbar in sync with the visible section ==========
+  const navLinks = document.querySelectorAll('.pill-nav a[href^="#"], .mobile-nav a[href^="#"]');
+  const spySections = document.querySelectorAll('section[id]');
+
+  function setActiveLink(id){
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+    });
+  }
+
+  const spyObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) setActiveLink(entry.target.id);
+    });
+  }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+
+  spySections.forEach(sec => spyObserver.observe(sec));
+
+  // ========== Reveal on scroll (fade / slide / pop, staggered) ==========
+  const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-pop');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+
+  // ========== 3D tilt on hero stage ==========
+  const stage = document.getElementById('tiltStage');
+  const heroSection = document.querySelector('.hero');
+  if (stage && heroSection) {
+    heroSection.addEventListener('mousemove', (e) => {
+      const rect = heroSection.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      stage.style.transform = `rotateY(${x * 16}deg) rotateX(${-y * 16}deg)`;
+    });
+    heroSection.addEventListener('mouseleave', () => {
+      stage.style.transform = `rotateY(0deg) rotateX(0deg)`;
+    });
+  }
+
+  // ========== Parallax Line System ==========
+  const parallaxSections = document.querySelectorAll('.hero, #about, #work, #gallery, #services');
+
+  parallaxSections.forEach(section => {
+    const layers = section.querySelectorAll('.parallax-layer');
+    if (!layers.length) return;
+
+    let targetX = 0, targetY = 0;
+    let currentX = 0, currentY = 0;
+    let rafId = null;
+    let isHovering = false;
+
+    section.addEventListener('mousemove', (e) => {
+      const rect = section.getBoundingClientRect();
+      targetX = e.clientX - rect.left - rect.width / 2;
+      targetY = e.clientY - rect.top - rect.height / 2;
+      isHovering = true;
+      if (!rafId) animate();
+    });
+
+    section.addEventListener('mouseleave', () => {
+      targetX = 0;
+      targetY = 0;
+      isHovering = false;
+    });
+
+    function animate() {
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+
+      layers.forEach(layer => {
+        const speed = parseFloat(layer.dataset.speed) || 0.05;
+        const x = currentX * speed;
+        const y = currentY * speed;
+        layer.style.transform = `translate(${x}px, ${y}px)`;
+      });
+
+      if (!isHovering && Math.abs(targetX - currentX) < 0.5 && Math.abs(targetY - currentY) < 0.5) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+        return;
+      }
+      rafId = requestAnimationFrame(animate);
+    }
+  });
+</script>
+
+</body>
+</html>

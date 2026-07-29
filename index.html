@@ -1584,7 +1584,21 @@
     }
 
     .video-overlay {
-      transition: opacity 0.35s ease, visibility 0.35s ease;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 18px 20px;
+      background: transparent;
+      border-radius: inherit;
+      z-index: 3;
+      transition: opacity .35s ease, visibility .35s ease, background .35s ease;
+      pointer-events: none;
+    }
+
+    .g-item:hover .video-overlay {
+      background: rgba(22, 18, 25, 0.12);
     }
 
     .video-overlay.hidden {
@@ -1593,46 +1607,235 @@
       pointer-events: none;
     }
 
-    .video-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(22, 18, 25, 0.25);
-      border-radius: inherit;
-      z-index: 3;
-      transition: opacity .3s ease;
-      pointer-events: none;
-    }
-
-    .video-overlay.hidden {
-      opacity: 0;
-    }
-
     .play-btn {
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      background: var(--white);
+      background: rgba(255, 255, 255, 0.95);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 24px rgba(20, 21, 26, 0.25);
+      box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18);
       pointer-events: auto;
       cursor: pointer;
-      transition: transform .2s ease, background .2s ease;
+      transition: all .35s cubic-bezier(.4, 0, .2, 1);
+      border: 3px solid var(--orange);
+      position: relative;
+      animation: playPulseOrange 2.8s ease-out infinite;
+    }
+
+    .play-btn::after {
+      content: 'Play';
+      position: absolute;
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%) translateX(8px);
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--white);
+      background: var(--orange);
+      padding: 5px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: all .3s cubic-bezier(.4, 0, .2, 1);
+      pointer-events: none;
+      box-shadow: 0 4px 14px rgba(255, 122, 51, 0.35);
+    }
+
+    .play-btn:hover::after {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
     }
 
     .play-btn:hover {
-      transform: scale(1.1);
-      background: var(--orange-soft);
+      transform: scale(1.15);
+      background: var(--orange);
+      box-shadow: 0 8px 30px rgba(255, 122, 51, 0.4);
+      animation: none;
     }
 
     .play-btn svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       margin-left: 3px;
+      transition: transform .3s ease;
+    }
+
+    .play-btn:hover svg {
+      transform: scale(1.1);
+    }
+
+    /* Color-matched play buttons per gallery item */
+    .g-item:nth-child(4n+1) .play-btn {
+      border-color: var(--orange);
+      animation-name: playPulseOrange;
+    }
+
+    .g-item:nth-child(4n+1) .play-btn::after {
+      background: var(--orange);
+      box-shadow: 0 4px 14px rgba(255, 122, 51, 0.35);
+    }
+
+    .g-item:nth-child(4n+1) .play-btn:hover {
+      background: var(--orange);
+      box-shadow: 0 8px 30px rgba(255, 122, 51, 0.4);
+    }
+
+    .g-item:nth-child(4n+2) .play-btn {
+      border-color: var(--blue);
+      animation-name: playPulseBlue;
+    }
+
+    .g-item:nth-child(4n+2) .play-btn::after {
+      background: var(--blue);
+      box-shadow: 0 4px 14px rgba(124, 92, 255, 0.35);
+    }
+
+    .g-item:nth-child(4n+2) .play-btn:hover {
+      background: var(--blue);
+      box-shadow: 0 8px 30px rgba(124, 92, 255, 0.4);
+    }
+
+    .g-item:nth-child(4n+3) .play-btn {
+      border-color: var(--teal);
+      animation-name: playPulseTeal;
+    }
+
+    .g-item:nth-child(4n+3) .play-btn::after {
+      background: var(--teal);
+      box-shadow: 0 4px 14px rgba(0, 194, 168, 0.35);
+    }
+
+    .g-item:nth-child(4n+3) .play-btn:hover {
+      background: var(--teal);
+      box-shadow: 0 8px 30px rgba(0, 194, 168, 0.4);
+    }
+
+    .g-item:nth-child(4n+4) .play-btn {
+      border-color: var(--pink);
+      animation-name: playPulsePink;
+    }
+
+    .g-item:nth-child(4n+4) .play-btn::after {
+      background: var(--pink);
+      box-shadow: 0 4px 14px rgba(255, 61, 120, 0.35);
+    }
+
+    .g-item:nth-child(4n+4) .play-btn:hover {
+      background: var(--pink);
+      box-shadow: 0 8px 30px rgba(255, 61, 120, 0.4);
+    }
+
+    /* Pulse keyframes */
+    @keyframes playPulseOrange {
+      0% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(255, 122, 51, 0.45);
+      }
+
+      70% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 14px rgba(255, 122, 51, 0);
+      }
+
+      100% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(255, 122, 51, 0);
+      }
+    }
+
+    @keyframes playPulseBlue {
+      0% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(124, 92, 255, 0.45);
+      }
+
+      70% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 14px rgba(124, 92, 255, 0);
+      }
+
+      100% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(124, 92, 255, 0);
+      }
+    }
+
+    @keyframes playPulseTeal {
+      0% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(0, 194, 168, 0.45);
+      }
+
+      70% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 14px rgba(0, 194, 168, 0);
+      }
+
+      100% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(0, 194, 168, 0);
+      }
+    }
+
+    @keyframes playPulsePink {
+      0% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(255, 61, 120, 0.45);
+      }
+
+      70% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 14px rgba(255, 61, 120, 0);
+      }
+
+      100% {
+        box-shadow: 0 6px 24px rgba(22, 18, 25, 0.18), 0 0 0 0 rgba(255, 61, 120, 0);
+      }
+    }
+
+    .g-item:nth-child(4n+1) .play-btn svg {
+      color: var(--orange);
+    }
+
+    .g-item:nth-child(4n+2) .play-btn svg {
+      color: var(--blue);
+    }
+
+    .g-item:nth-child(4n+3) .play-btn svg {
+      color: var(--teal);
+    }
+
+    .g-item:nth-child(4n+4) .play-btn svg {
+      color: var(--pink);
+    }
+
+    .play-btn:hover svg {
+      color: var(--white) !important;
+    }
+
+    /* Mobile play button sizing */
+    @media(max-width:768px) {
+      .play-btn {
+        width: 44px;
+        height: 44px;
+      }
+
+      .play-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .play-btn::after {
+        display: none;
+      }
+    }
+
+    .video-poster {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+      z-index: 2;
+      transition: opacity .4s ease;
+    }
+
+    .video-poster.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     /* ========== WHATSAPP FAB ========== */
@@ -2097,6 +2300,7 @@
       }
     }
   </style>
+  <base target="_blank">
 </head>
 
 <body>
@@ -2534,7 +2738,7 @@
             <div class="video-overlay">
               <button class="play-btn" aria-label="Play video">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5v14l11-7L8 5z" fill="#161219" />
+                  <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
                 </svg>
               </button>
             </div>
@@ -2548,7 +2752,7 @@
             <div class="video-overlay">
               <button class="play-btn" aria-label="Play video">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5v14l11-7L8 5z" fill="#161219" />
+                  <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
                 </svg>
               </button>
             </div>
@@ -2562,7 +2766,7 @@
             <div class="video-overlay">
               <button class="play-btn" aria-label="Play video">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5v14l11-7L8 5z" fill="#161219" />
+                  <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
                 </svg>
               </button>
             </div>
@@ -2575,7 +2779,7 @@
             <div class="video-overlay">
               <button class="play-btn" aria-label="Play video">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5v14l11-7L8 5z" fill="#161219" />
+                  <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
                 </svg>
               </button>
             </div>
@@ -2589,7 +2793,7 @@
             <div class="video-overlay">
               <button class="play-btn" aria-label="Play video">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5v14l11-7L8 5z" fill="#161219" />
+                  <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
                 </svg>
               </button>
             </div>
@@ -2603,7 +2807,7 @@
             <div class="video-overlay">
               <button class="play-btn" aria-label="Play video">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5v14l11-7L8 5z" fill="#161219" />
+                  <path d="M8 5v14l11-7L8 5z" fill="currentColor" />
                 </svg>
               </button>
             </div>
@@ -2902,10 +3106,12 @@
         if (otherItem === exceptItem) return;
         const otherVideo = otherItem.querySelector('video');
         const otherOverlay = otherItem.querySelector('.video-overlay');
+        const otherPoster = otherItem.querySelector('.video-poster');
         if (otherVideo && !otherVideo.paused) {
           otherVideo.pause();
           otherVideo.removeAttribute('controls');
           if (otherOverlay) otherOverlay.classList.remove('hidden');
+          if (otherPoster) otherPoster.classList.remove('hidden');
         }
       });
     }
@@ -2914,7 +3120,19 @@
       const video = item.querySelector('video');
       const overlay = item.querySelector('.video-overlay');
       const playBtn = item.querySelector('.play-btn');
-      if (!video || !overlay || !playBtn) return;
+      const inner = item.querySelector('.g-inner');
+      if (!video || !overlay || !playBtn || !inner) return;
+
+      // Create poster image from video poster attribute
+      let posterImg = null;
+      if (video.poster) {
+        posterImg = document.createElement('img');
+        posterImg.src = video.poster;
+        posterImg.alt = video.getAttribute('aria-label') || 'Video thumbnail';
+        posterImg.className = 'video-poster hidden';
+        posterImg.loading = 'lazy';
+        inner.insertBefore(posterImg, video);
+      }
 
       let isPlaying = false;
 
@@ -2924,6 +3142,7 @@
         isPlaying = true;
         activeVideo = video;
         activeOverlay = overlay;
+        if (posterImg) posterImg.classList.add('hidden');
         video.setAttribute('controls', '');
         video.play().then(() => {
           overlay.classList.add('hidden');
@@ -2932,6 +3151,7 @@
           isPlaying = false;
           activeVideo = null;
           activeOverlay = null;
+          if (posterImg) posterImg.classList.remove('hidden');
         });
       }
 
@@ -2940,6 +3160,7 @@
         video.pause();
         video.removeAttribute('controls');
         overlay.classList.remove('hidden');
+        if (posterImg) posterImg.classList.remove('hidden');
         if (activeVideo === video) {
           activeVideo = null;
           activeOverlay = null;
@@ -2961,6 +3182,7 @@
         isPlaying = false;
         overlay.classList.remove('hidden');
         video.removeAttribute('controls');
+        if (posterImg) posterImg.classList.remove('hidden');
         if (activeVideo === video) {
           activeVideo = null;
           activeOverlay = null;
@@ -2972,6 +3194,7 @@
         overlay.classList.remove('hidden');
         video.removeAttribute('controls');
         video.currentTime = 0;
+        if (posterImg) posterImg.classList.remove('hidden');
         if (activeVideo === video) {
           activeVideo = null;
           activeOverlay = null;
@@ -2980,6 +3203,7 @@
 
       video.addEventListener('playing', () => {
         isPlaying = true;
+        if (posterImg) posterImg.classList.add('hidden');
       });
 
       // Stop playback automatically once the tile scrolls out of view
